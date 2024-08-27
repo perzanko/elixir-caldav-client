@@ -6,6 +6,8 @@ defmodule CalDAVClient.Event do
   import CalDAVClient.HTTP.Error
   import CalDAVClient.Tesla
 
+  require Logger
+
   @type t :: %__MODULE__{
           icalendar: String.t(),
           url: String.t(),
@@ -34,13 +36,15 @@ defmodule CalDAVClient.Event do
         etag = env |> Tesla.get_header("etag")
         {:ok, etag}
 
-      {:ok, %Tesla.Env{status: code}} ->
+      {:ok, %Tesla.Env{status: code} = error} ->
+        Logger.warning("Tesla response", error: inspect(error))
         case code do
           412 -> {:error, :already_exists}
           _ -> {:error, reason_atom(code)}
         end
 
       {:error, _reason} = error ->
+        Logger.warning("Error response", error: inspect(error))
         error
     end
   end
@@ -69,13 +73,15 @@ defmodule CalDAVClient.Event do
         etag = env |> Tesla.get_header("etag")
         {:ok, etag}
 
-      {:ok, %Tesla.Env{status: code}} ->
+      {:ok, %Tesla.Env{status: code} = error} ->
+        Logger.warning("Tesla response", error: inspect(error))
         case code do
           412 -> {:error, :bad_etag}
           _ -> {:error, reason_atom(code)}
         end
 
       {:error, _reason} = error ->
+        Logger.warning("Error response", error: inspect(error))
         error
     end
   end
